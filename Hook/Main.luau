@@ -1,0 +1,131 @@
+local MainHooker = {}
+local oldindex, oldnewindex, mt, oldInfo
+local hookstuff = {}
+local realhookvalues = {}
+
+function MainHooker:InitializeHooks()
+    if getgenv().ishookinit then return false, "Failed to initialize. Already initialized!!" end
+    getgenv().ishookinit = true
+    mt = getrawmetatable(game)
+    setreadonly(mt, false)
+    oldindex = mt.__index 
+    oldnewindex = mt.__newindex
+    oldInfo = debug.info
+
+    local function newindexhook(obj, prop, val)
+        if hookstuff[obj] and hookstuff[obj][prop] ~= nil then
+            hookstuff[obj][prop] = val
+        end
+
+        if realhookvalues[obj] and realhookvalues[obj][prop] ~= nil then
+            return realhookvalues[obj][prop]
+        end
+
+        return oldnewindex(obj, prop, val)
+    end
+
+    local function indexhook(obj, prop)
+        if hookstuff[obj] and hookstuff[obj][prop] ~= nil then
+            return hookstuff[obj][prop]
+        end
+
+        return oldindex(obj, prop)
+    end
+
+    setstackhidden(newindexhook, true)
+    setstackhidden(indexhook, true)
+
+    setreadonly(debug, false)
+
+    debug.info = function(level, what)
+        if not what then
+            return oldInfo(level)
+        end
+
+        if not string.find(what, "f") then
+            return oldInfo(level, what)
+        end
+
+        local results = {oldInfo(level, what)}
+
+        local fIndex = string.find(what, "f")
+        if fIndex then
+            local f = results[fIndex]
+
+            if f == newindexhook then
+                results[fIndex] = oldnewindex
+            elseif f == indexhook then
+                results[fIndex] = oldindex
+            end
+        end
+
+        return unpack(results)
+    end
+
+    setreadonly(debug, true)
+
+    mt.__index = newcclosure(indexhook)
+    mt.__newindex = newcclosure(newindexhook)
+
+    setreadonly(mt, true)
+    return true, "Successfully initialized hooks globally."
+end
+
+function MainHooker:RemoveHooks()
+    if not getgenv().ishookinit then return false, "Hooks aren't initialized yet!!" end
+    setreadonly(mt, false)
+    setreadonly(debug, false)
+    mt.__index = oldindex
+    mt.__newindex = oldnewindex
+    debug.info = oldInfo
+    table.clear(hookstuff)
+    table.clear(realhookvalues)
+    setreadonly(mt, true)
+    setreadonly(debug, true)
+    getgenv().ishookinit = false
+    return true, "Successfully removed hooks globally."
+end
+
+function MainHooker:ChangeObjectValue(Object, Property, Value)
+    if not hookstuff[Object] or hookstuff[Object][Property] == nil then
+        return false, "Property is not hooked."
+    end
+
+    if realhookvalues[Object] then
+        realhookvalues[Object][Property] = Value
+    else
+        realhookvalues[Object] = {}
+        realhookvalues[Object][Property] = Value
+    end
+
+    Object[Property] = Value
+end
+
+function MainHooker:RemoveSingular(Object, Property)
+    if realhookvalues[Object] then
+        realhookvalues[Object][Property] = nil
+
+        if next(realhookvalues[Object]) == nil then
+            realhookvalues[Object] = nil
+        end
+    end
+
+    if hookstuff[Object] then
+        hookstuff[Object][Property] = nil
+
+        if next(hookstuff[Object]) == nil then
+            hookstuff[Object] = nil
+        end
+    end
+end
+
+function MainHooker:Hook(Object, Property)
+    if hookstuff[Object] then
+        hookstuff[Object][Property] = Object[Property]
+    else
+        hookstuff[Object] = {}
+        hookstuff[Object][Property] = Object[Property]
+    end
+end
+
+return MainHooker
