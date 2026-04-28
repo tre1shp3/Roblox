@@ -88,6 +88,7 @@ function MainHooker:RemoveHooks()
 end
 
 function MainHooker:ChangeObjectValue(Object, Property, Value)
+    if not getgenv().ishookinit then return end
     if not hookstuff[Object] or hookstuff[Object][Property] == nil then
         return false, "Property is not hooked."
     end
@@ -103,6 +104,7 @@ function MainHooker:ChangeObjectValue(Object, Property, Value)
 end
 
 function MainHooker:RemoveSingular(Object, Property)
+    if not getgenv().ishookinit then return end
     if realhookvalues[Object] then
         realhookvalues[Object][Property] = nil
 
@@ -120,12 +122,30 @@ function MainHooker:RemoveSingular(Object, Property)
     end
 end
 
+function MainHooker:IsHooked(Object, Property)
+    if not getgenv().ishookinit then return false end
+    if hookstuff[Object] and hookstuff[Object][Property] then
+        return true
+    else
+        return false
+    end
+end
+
 function MainHooker:Hook(Object, Property)
+    if not getgenv().ishookinit then return end
     if hookstuff[Object] then
         hookstuff[Object][Property] = Object[Property]
     else
         hookstuff[Object] = {}
         hookstuff[Object][Property] = Object[Property]
+    end
+end
+
+function MainHooker:RealValue(Object, Property)
+    if realhookvalues[Object] and realhookvalues[Object][Property] then
+        return realhookvalues[Object][Property]
+    else
+        return false
     end
 end
 
