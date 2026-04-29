@@ -139,6 +139,8 @@ function MainHooker:Hook(Object, Property)
         hookstuff[Object] = {}
         hookstuff[Object][Property] = Object[Property]
     end
+
+    self:ChangeObjectValue(Object, Property, Object[Property])
 end
 
 function MainHooker:RealValue(Object, Property)
