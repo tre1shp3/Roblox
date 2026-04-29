@@ -79,8 +79,6 @@ function MainHooker:RemoveHooks()
     mt.__index = oldindex
     mt.__newindex = oldnewindex
     debug.info = oldInfo
-    table.clear(hookstuff)
-    table.clear(realhookvalues)
     setreadonly(mt, true)
     setreadonly(debug, true)
     getgenv().ishookinit = false
