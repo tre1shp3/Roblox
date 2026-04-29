@@ -9,7 +9,7 @@ function Main:RBX_Signal_Disable(RBXScriptSignal)
 
     local Connections = getconnections(RBXScriptSignal)
     local Reenable = setmetatable({},{
-        __call = function()
+        __call = function(self)
             for _, Item in Connections do
                 Item:Enable()
             end
@@ -34,7 +34,7 @@ function Main:ChangeSignalStop(Object)
     end
 
     local Reenable = setmetatable({},{
-        __call = function()
+        __call = function(self)
             Changed()
             
             for Property, RBXScriptSignal in GetPropertyChangedSignals do
