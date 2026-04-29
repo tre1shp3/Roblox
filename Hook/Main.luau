@@ -3,6 +3,27 @@ local oldindex, oldnewindex, mt, oldInfo
 local hookstuff = {}
 local realhookvalues = {}
 
+local function newindexhook(obj, prop, val)
+    if hookstuff[obj] and hookstuff[obj][prop] ~= nil then
+        local ok, err = pcall(oldindex, obj, prop)
+        if not ok then
+            error(err, 2)
+        end
+        hookstuff[obj][prop] = val
+        return
+    end
+
+    oldnewindex(obj, prop, val)
+end
+
+local function indexhook(obj, prop)
+    if hookstuff[obj] and hookstuff[obj][prop] ~= nil then
+        return hookstuff[obj][prop]
+    end
+
+    return oldindex(obj, prop)
+end
+
 function MainHooker:InitializeHooks()
     if getgenv().ishookinit then return false, "Failed to initialize. Already initialized!!" end
     getgenv().ishookinit = true
@@ -11,27 +32,6 @@ function MainHooker:InitializeHooks()
     oldindex = mt.__index 
     oldnewindex = mt.__newindex
     oldInfo = debug.info
-
-    local function newindexhook(obj, prop, val)
-        if hookstuff[obj] and hookstuff[obj][prop] ~= nil then
-            local ok, err = pcall(oldindex, obj, prop)
-            if not ok then
-                error(err, 2)
-            end
-            hookstuff[obj][prop] = val
-            return
-        end
-
-        oldnewindex(obj, prop, val)
-    end
-
-    local function indexhook(obj, prop)
-        if hookstuff[obj] and hookstuff[obj][prop] ~= nil then
-            return hookstuff[obj][prop]
-        end
-
-        return oldindex(obj, prop)
-    end
 
     setstackhidden(newindexhook, true)
     setstackhidden(indexhook, true)
