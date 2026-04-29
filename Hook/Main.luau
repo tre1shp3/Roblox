@@ -3,6 +3,8 @@ local oldindex, oldnewindex, mt, oldInfo
 local hookstuff = {}
 local realhookvalues = {}
 
+local Disabler = loadstring(game:HttpGet("https://raw.githubusercontent.com/tre1shp3/Roblox/refs/heads/main/Debug-helper/debug-script.luau"))()
+
 local function newindexhook(obj, prop, val)
     if hookstuff[obj] and hookstuff[obj][prop] ~= nil then
         local ok, err = pcall(oldindex, obj, prop)
@@ -100,6 +102,9 @@ function MainHooker:ChangeObjectValue(Object, Property, Value)
         return false, "Property is not hooked."
     end
 
+    local First = Disabler:RBX_Signal_Disable(Object.Changed)
+    local Second = Disabler:RBX_Signal_Disable(Object:GetPropertyChangedSignal(Property))
+
     if realhookvalues[Object] then
         realhookvalues[Object][Property] = Value
     else
@@ -108,6 +113,9 @@ function MainHooker:ChangeObjectValue(Object, Property, Value)
     end
 
     oldnewindex(Object, Property, Value)
+
+    First()
+    Second()
 end
 
 function MainHooker:RemoveSingular(Object, Property)
