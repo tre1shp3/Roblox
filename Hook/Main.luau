@@ -69,6 +69,15 @@ function MainHooker:InitializeHooks()
     mt.__newindex = newcclosure(newindexhook)
 
     setreadonly(mt, true)
+
+    for obj, props in hookstuff do
+        for prop in props do
+            local currentVal = oldindex(obj, prop) -- read real value while hooks are off
+            hookstuff[obj][prop] = currentVal
+            self:ChangeObjectValue(obj, prop, currentVal)
+        end
+    end
+
     return true, "Successfully initialized hooks globally."
 end
 
@@ -78,8 +87,6 @@ function MainHooker:RemoveHooks()
     setreadonly(debug, false)
     mt.__index = oldindex
     mt.__newindex = oldnewindex
-    table.clear(hookstuff)
-    table.clear(realhookvalues)
     debug.info = oldInfo
     setreadonly(mt, true)
     setreadonly(debug, true)
