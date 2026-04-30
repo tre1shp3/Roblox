@@ -139,7 +139,7 @@ end
 
 function MainHooker:IsHooked(Object, Property)
     if not getgenv().ishookinit then return false end
-    if hookstuff[Object] and hookstuff[Object][Property] then
+    if hookstuff[Object] and hookstuff[Object][Property] ~= nil then
         return true
     else
         return false
@@ -159,7 +159,7 @@ function MainHooker:Hook(Object, Property)
 end
 
 function MainHooker:RealValue(Object, Property)
-    if realhookvalues[Object] and realhookvalues[Object][Property] then
+    if realhookvalues[Object] and realhookvalues[Object][Property] ~= nil then
         return realhookvalues[Object][Property]
     else
         return false
