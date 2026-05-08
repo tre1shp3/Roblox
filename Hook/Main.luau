@@ -1,5 +1,6 @@
 local MainHooker = {}
 local oldindex, oldnewindex, mt, oldInfo
+local readspoofs = {}
 local hookstuff = {}
 local realhookvalues = {}
 
@@ -19,6 +20,10 @@ local function newindexhook(obj, prop, val)
 end
 
 local function indexhook(obj, prop)
+    if readspoofs[obj] and readspoofs[obj][prop] ~= nil then
+        return readspoofs[obj][prop]
+    end
+    
     if hookstuff[obj] and hookstuff[obj][prop] ~= nil then
         return hookstuff[obj][prop]
     end
@@ -116,6 +121,31 @@ function MainHooker:ChangeObjectValue(Object, Property, Value)
 
     First()
     Second()
+end
+
+function MainHooker:SpoofRead(Object, Property, Value)
+    if not getgenv().ishookinit then return end
+
+    if not readspoofs[Object] then readspoofs[Object] = {} end
+
+    readspoofs[Object][Property] = Value
+end
+
+function MainHooker:UnspoofRead(Object, Property)
+    if not getgenv().ishookinit then return end
+    if readspoofs[Object] and readspoofs[Object][Property] ~= nil then   
+        readspoofs[Object][Property] = nil
+
+        if next(readspoofs[Object]) == nil then
+            readspoofs[Object] = nil
+        end
+    else
+        return
+    end
+end
+
+function MainHooker:IsReadSpoofed(Object, Property)
+    return (readspoofs[Object] and readspoofs[Object][Property] ~= nil)
 end
 
 function MainHooker:RemoveSingular(Object, Property)
