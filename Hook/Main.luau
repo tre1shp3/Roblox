@@ -46,30 +46,46 @@ function MainHooker:InitializeHooks()
     setreadonly(debug, false)
 
     debug.info = function(level, what)
-        if not what then
-            return oldInfo(level)
-        end
-
-        if not string.find(what, "f") then
-            return oldInfo(level, what)
-        end
-
-        local results = {oldInfo(level, what)}
-
-        local fIndex = string.find(what, "f")
-        if fIndex then
-            local f = results[fIndex]
-
-            if f == newindexhook then
-                results[fIndex] = oldnewindex
-            elseif f == indexhook then
-                results[fIndex] = oldindex
-            end
-        end
-
-        return unpack(results)
+    	if not what then
+    		return oldInfo(level)
+    	end
+    
+    	if not string.find(what, "f", 1, true) then
+    		return oldInfo(level, what)
+    	end
+    
+    	local results = {oldInfo(level, what)}
+    
+    	-- Calculate which result index corresponds to "f"
+    	local resultIndex = 0
+    	for i = 1, #what do
+    		local c = string.sub(what, i, i)
+    		if c == "f" then
+    			resultIndex = resultIndex + 1
+    			break
+    		elseif c == "a" then
+    			resultIndex = resultIndex + 2
+    		elseif c == "s" or c == "l" or c == "n" then
+    			resultIndex = resultIndex + 1
+    		end
+    		-- unknown chars contribute 0, matching debug.info's behavior of ignoring them
+    	end
+    
+    	if resultIndex > 0 then
+    		local f = results[resultIndex]
+    		if f == newindexhook then
+    			results[resultIndex] = oldnewindex
+    		elseif f == indexhook then
+    			results[resultIndex] = oldindex
+    		end
+    	end
+    
+    	return unpack(results)
     end
-
+    
+    return unpack(results)
+    end
+    
     setreadonly(debug, true)
 
     mt.__index = newcclosure(indexhook)
