@@ -1,49 +1,56 @@
 local MainHooker = {}
-local oldindex, oldnewindex
+local oldindex, oldnewindex, mt, oldInfo
 local readspoofs = {}
 local hookstuff = {}
 local realhookvalues = {}
+local indexhook, newindexhook
 
 local Disabler = loadstring(game:HttpGet("https://raw.githubusercontent.com/tre1shp3/Roblox/refs/heads/main/Debug-helper/debug-script.luau"))()
 
-local function newindexhook(obj, prop, val)
-    if type(prop) ~= "string" then
-        return oldnewindex(obj, prop, val)
-    end
-    if hookstuff[obj] and hookstuff[obj][prop] ~= nil then
-        local ok, err = pcall(oldindex, obj, prop)
-        if not ok then
-            error(err, 2)
+indexhook = function(...)
+    local n = select("#", ...)
+    if n == 2 then
+        local obj, prop = ...
+        if type(obj) == "userdata" and type(prop) == "string" then
+            if readspoofs[obj] and readspoofs[obj][prop] ~= nil then
+                return readspoofs[obj][prop]
+            end
+            if hookstuff[obj] and hookstuff[obj][prop] ~= nil then
+                return hookstuff[obj][prop]
+            end
         end
-        hookstuff[obj][prop] = val
-        return
     end
-    oldnewindex(obj, prop, val)
+    return oldindex(...)
 end
 
-local function indexhook(obj, prop)
-    if type(prop) ~= "string" then
-        return oldindex(obj, prop)
+newindexhook = function(...)
+    local n = select("#", ...)
+    if n == 3 then
+        local obj, prop, val = ...
+        if type(obj) == "userdata" and type(prop) == "string" then
+            if hookstuff[obj] and hookstuff[obj][prop] ~= nil then
+                hookstuff[obj][prop] = val
+                return
+            end
+        end
     end
-    if readspoofs[obj] and readspoofs[obj][prop] ~= nil then
-        return readspoofs[obj][prop]
-    end
-    if hookstuff[obj] and hookstuff[obj][prop] ~= nil then
-        return hookstuff[obj][prop]
-    end
-    return oldindex(obj, prop)
+    return oldnewindex(...)
 end
 
 function MainHooker:InitializeHooks()
     if getgenv().ishookinit then return false, "Failed to initialize. Already initialized!!" end
     getgenv().ishookinit = true
-
-    local mt = getrawmetatable(game)
+    mt = getrawmetatable(game)
+    setreadonly(mt, false)
     oldindex = mt.__index
     oldnewindex = mt.__newindex
 
-    oldindex = oth.hook(oldindex, indexhook)
-    oldnewindex = oth.hook(oldnewindex, newindexhook)
+    setstackhidden(indexhook, true)
+    setstackhidden(newindexhook, true)
+
+    mt.__index = indexhook
+    mt.__newindex = newindexhook
+    setreadonly(mt, true)
 
     for obj, props in hookstuff do
         for prop in props do
@@ -58,8 +65,11 @@ end
 
 function MainHooker:RemoveHooks()
     if not getgenv().ishookinit then return false, "Hooks aren't initialized yet!!" end
-    oth.unhook(oldindex)
-    oth.unhook(oldnewindex)
+    setreadonly(mt, false)
+    mt.__index = oldindex
+    mt.__newindex = oldnewindex
+    setreadonly(mt, true)
+    pcall(function() oth.unhook(debug.info) end)
     getgenv().ishookinit = false
     return true, "Successfully removed hooks globally."
 end
@@ -69,19 +79,14 @@ function MainHooker:ChangeObjectValue(Object, Property, Value)
     if not hookstuff[Object] or hookstuff[Object][Property] == nil then
         return false, "Property is not hooked."
     end
-
     local First = Disabler:RBX_Signal_Disable(Object.Changed)
     local Second = Disabler:RBX_Signal_Disable(Object:GetPropertyChangedSignal(Property))
-
     if realhookvalues[Object] then
         realhookvalues[Object][Property] = Value
     else
-        realhookvalues[Object] = {}
-        realhookvalues[Object][Property] = Value
+        realhookvalues[Object] = {[Property] = Value}
     end
-
     oldnewindex(Object, Property, Value)
-
     First()
     Second()
 end
@@ -96,29 +101,23 @@ function MainHooker:UnspoofRead(Object, Property)
     if not getgenv().ishookinit then return end
     if readspoofs[Object] and readspoofs[Object][Property] ~= nil then
         readspoofs[Object][Property] = nil
-        if next(readspoofs[Object]) == nil then
-            readspoofs[Object] = nil
-        end
+        if next(readspoofs[Object]) == nil then readspoofs[Object] = nil end
     end
 end
 
 function MainHooker:IsReadSpoofed(Object, Property)
-    return (readspoofs[Object] and readspoofs[Object][Property] ~= nil)
+    return (readspoofs[Object] and readspoofs[Object][Property] ~= nil) and true or false
 end
 
 function MainHooker:RemoveSingular(Object, Property)
     if not getgenv().ishookinit then return end
     if realhookvalues[Object] then
         realhookvalues[Object][Property] = nil
-        if next(realhookvalues[Object]) == nil then
-            realhookvalues[Object] = nil
-        end
+        if next(realhookvalues[Object]) == nil then realhookvalues[Object] = nil end
     end
     if hookstuff[Object] then
         hookstuff[Object][Property] = nil
-        if next(hookstuff[Object]) == nil then
-            hookstuff[Object] = nil
-        end
+        if next(hookstuff[Object]) == nil then hookstuff[Object] = nil end
     end
 end
 
@@ -132,8 +131,7 @@ function MainHooker:Hook(Object, Property)
     if hookstuff[Object] then
         hookstuff[Object][Property] = Object[Property]
     else
-        hookstuff[Object] = {}
-        hookstuff[Object][Property] = Object[Property]
+        hookstuff[Object] = {[Property] = Object[Property]}
     end
     self:ChangeObjectValue(Object, Property, Object[Property])
 end
