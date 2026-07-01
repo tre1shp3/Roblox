@@ -20,18 +20,10 @@
 
 **MainHooker:IsHooked(Object, Property)** : Returns true if the property is hooked.
 
-# Hook vs SpoofRead
-
-Hook = reads and writes stay matched. Game writes land and read back consistently, real value is spoofed. Use this for most stuff.
-
-SpoofRead = read-only lie, real property untouched.
-
-Don't mix them up. Returning a read the game never wrote, or losing a write, = desync = you get caught. That's the #1 mistake people make, which is why these are separate.
-
 # Disclaimers
 
-- Works against anticheats that use debug.info + metamethod probing (Adonis-typa and similar). Does NOT beat server-side checks, signal-based detection, or env scanning. It's a hook lib, not a magic anticheat killer.
+- Works against anticheats that use debug.info + metamethod probing (Adonis-typa and similar).
 - Needs an executor with setstackhidden, getrawmetatable, setreadonly, newcclosure, iscclosure. Made/tested on Volt. Other executors or executor updates might break it.
-- Anticheats update. Works as of now, no promises forever. Test it yourself.
+- Anticheats update. Works as of now.
 
 iunnu the rest bruh, figure it out, its open source.
