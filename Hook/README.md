@@ -22,7 +22,7 @@
 
 # Disclaimers
 
-- Works against anticheats that use debug.info + metamethod probing (Adonis-typa and similar).
+- Made and tested on Adonis. Shouldn't be easily detectable.
 - Needs an executor with setstackhidden, getrawmetatable, setreadonly, newcclosure, iscclosure. Made/tested on Volt. Other executors or executor updates might break it.
 - Anticheats update. Works as of now.
 
