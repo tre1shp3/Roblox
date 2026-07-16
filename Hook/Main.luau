@@ -69,7 +69,6 @@ function MainHooker:RemoveHooks()
     mt.__index = oldindex
     mt.__newindex = oldnewindex
     setreadonly(mt, true)
-    pcall(function() oth.unhook(debug.info) end)
     getgenv().ishookinit = false
     return true, "Successfully removed hooks globally."
 end
