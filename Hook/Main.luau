@@ -65,6 +65,7 @@ end
 
 function MainHooker:RemoveHooks()
     if not getgenv().ishookinit then return false, "Hooks aren't initialized yet!!" end
+    mt = getrawmetatable(game)
     setreadonly(mt, false)
     mt.__index = oldindex
     mt.__newindex = oldnewindex
