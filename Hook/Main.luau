@@ -5,7 +5,24 @@ local hookstuff = {}
 local realhookvalues = {}
 local indexhook, newindexhook
 
-local Disabler = loadstring(game:HttpGet("https://raw.githubusercontent.com/tre1shp3/Roblox/refs/heads/main/Debug-helper/debug-script.luau"))()
+function RBX_Signal_Disable(RBXScriptSignal)
+    -- ported from disabler to avoid double loadstring
+
+    local Connections = getconnections(RBXScriptSignal)
+    local Reenable = setmetatable({},{
+        __call = function(self)
+            for _, Item in Connections do
+                Item:Enable()
+            end
+        end
+    })
+
+    for _, Item in Connections do
+        Item:Disable()
+    end
+
+    return Reenable
+end
 
 indexhook = function(...)
     local n = select("#", ...)
@@ -79,8 +96,8 @@ function MainHooker:ChangeObjectValue(Object, Property, Value)
     if not hookstuff[Object] or hookstuff[Object][Property] == nil then
         return false, "Property is not hooked."
     end
-    local First = Disabler:RBX_Signal_Disable(Object.Changed)
-    local Second = Disabler:RBX_Signal_Disable(Object:GetPropertyChangedSignal(Property))
+    local First = RBX_Signal_Disable(Object.Changed)
+    local Second = RBX_Signal_Disable(Object:GetPropertyChangedSignal(Property))
     if realhookvalues[Object] then
         realhookvalues[Object][Property] = Value
     else
