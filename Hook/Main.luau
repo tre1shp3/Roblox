@@ -5,6 +5,10 @@ local hookstuff = {}
 local realhookvalues = {}
 local indexhook, newindexhook
 
+if getgenv().Hooking_Library then
+    return getgenv().Hooking_Library
+end
+
 function RBX_Signal_Disable(RBXScriptSignal)
     -- ported from disabler to avoid double loadstring
 
@@ -160,5 +164,7 @@ function MainHooker:RealValue(Object, Property)
         return false
     end
 end
+
+getgenv().Hooking_Library = MainHooker
 
 return MainHooker
