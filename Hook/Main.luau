@@ -50,6 +50,11 @@ newindexhook = function(...)
         local obj, prop, val = ...
         if type(obj) == "userdata" and type(prop) == "string" then
             if hookstuff[obj] and hookstuff[obj][prop] ~= nil then
+                if hookstuff[obj][prop] ~= val then
+                    firesignal(obj:GetPropertyChangedSignal(prop))
+
+                    firesignal(obj.Changed, prop)
+                end
                 hookstuff[obj][prop] = val
                 return
             end
