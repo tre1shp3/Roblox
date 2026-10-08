@@ -52,15 +52,17 @@ newindexhook = newcclosure(function(...)
             if hookstuff[obj] and hookstuff[obj][prop] ~= nil then
                 if hookstuff[obj][prop] ~= val then
 
-                    local o_val = hookstuff[obj][prop]
+                    local o_val = realhookvalues[obj][prop]
 
                     local ok = pcall(function()
                         MainHooker:ChangeObjectValue(obj, prop, val)
                     end)
-
+                    
                     MainHooker:ChangeObjectValue(obj, prop, o_val)
 
-                    if not ok then return oldnewindex(obj, prop, val) end
+                    if not ok then
+                        return oldnewindex(obj, prop, val)
+                    end
 
                     if string.find(obj.ClassName:lower(), "value") then
                         firesignal(obj.Changed, val)
@@ -268,6 +270,22 @@ function MainHooker:RealValue(Object, Property)
         return false
     end
 end
+
+task.spawn(function()
+    while task.wait() do
+        if not getgenv().ishookinit then continue end
+
+        for object, prop_table in realhookvalues do
+            for prop, val in prop_table do
+                local oldidx_val = oldindex(object, prop)
+
+                if oldidx_val ~= val then
+                    MainHooker:ChangeObjectValue(object, prop, val)
+                end
+            end
+        end
+    end
+end)
 
 getgenv().Hooking_Library = MainHooker
 
