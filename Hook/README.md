@@ -25,5 +25,6 @@
 - Made and tested on Adonis. Shouldn't be easily detectable.
 - Needs an executor with setstackhidden, getrawmetatable, setreadonly, newcclosure, iscclosure. Made/tested on Volt. Other executors or executor updates might break it.
 - Anticheats update. Works as of now.
+- test version has the same functions however accounts for more anticheat checks than normal version does, it is sloppier but its lwk fine.
 
 iunnu the rest bruh, figure it out, its open source.
