@@ -80,13 +80,18 @@ newindexhook = newcclosure(function(...)
     return oldnewindex(...)
 end)
 
+local namecall_extrafunctions = {}
+MainHooker.Namecall_ForceReturnAfterFunction = "nc_forcereturnafterfunction"
+MainHooker.Namecall_ForceStopAfterFunction = "nc_forcestopafterfunction"
+
 namecallhook = newcclosure(function(obj, ...)
-    if typeof(obj) ~= "Instance" then return oldnamecall(obj, ...) end
-    if obj.Parent == nil then return oldnamecall(obj, ...) end
+    local run_clone_check = true
+    if typeof(obj) ~= "Instance" then run_clone_check = false end
+    if obj.Parent == nil then run_clone_check = false end
 
     local method = getnamecallmethod()
 
-    if method == "Clone" then
+    if method == "Clone" and run_clone_check then
         if hookstuff[obj] then
             local ob = oldnamecall(obj, ...)
 
@@ -105,6 +110,18 @@ namecallhook = newcclosure(function(obj, ...)
             end
 
             return ob
+        end
+    end
+
+    local checkCaller = checkcaller()
+
+    for pointer, func in namecall_extrafunctions do
+        local r_arg = func(method, checkCaller, obj, ...)
+
+        if r_arg == MainHooker.Namecall_ForceReturnAfterFunction then
+            return oldnamecall(obj, ...)
+        elseif r_arg == MainHooker.Namecall_ForceStopAfterFunction then
+            return
         end
     end
 
@@ -269,6 +286,26 @@ function MainHooker:RealValue(Object, Property)
     else
         return false
     end
+end
+
+-- extrazz
+
+function MainHooker:AddNamecallExtra(func, poopter)
+    if poopter and func then
+        namecall_extrafunctions[poopter] = func
+        return true
+    end
+
+    return false
+end
+
+function MainHooker:RemoveNamecallExtra(poopter)
+    if poopter and namecall_extrafunctions[poopter] then
+        namecall_extrafunctions[poopter] = nil
+        return true
+    end
+
+    return false
 end
 
 task.spawn(function()
